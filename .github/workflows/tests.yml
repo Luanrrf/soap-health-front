@@ -1,4 +1,4 @@
-name: Front-End CI
+name: CI
 
 on:
   push:
@@ -7,18 +7,18 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
-  install:
-    name: Install Dependencies
+  lint:
+    name: Lint & Format Check
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v2
         with:
-          version: 10.23.0
+          version: 8
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,71 +29,76 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-  lint:
-    name: Lint Check
+      - name: Run ESLint
+        run: pnpm lint:check
+
+      - name: Check Prettier formatting
+        run: pnpm format:check
+
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    needs: install
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v2
         with:
-          version: 10.23.0
+          version: 8
 
-      - name: Restore node_modules from cache
-        uses: actions/cache@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          node-version: 22.x
+          cache: 'pnpm'
 
-      - name: Run ESLint
-        run: pnpm lint
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build project
+        run: pnpm build
 
   type-check:
     name: TypeScript Type Check
     runs-on: ubuntu-latest
-    needs: install
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v2
         with:
-          version: 10.23.0
+          version: 8
 
-      - name: Restore node_modules
-        uses: actions/cache@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          node-version: 22.x
+          cache: 'pnpm'
 
-      - name: Run TypeScript type checking
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run TypeScript compiler check
         run: pnpm tsc --noEmit
 
-  build:
-    name: Build Next.js App
+  quality-gate:
+    name: Quality Gate
     runs-on: ubuntu-latest
-    needs: [install, lint, type-check]
+    needs: [lint, build, test, type-check]
+    if: always()
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.23.0
-
-      - name: Restore node_modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Build
-        run: pnpm build
+      - name: Check all jobs status
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.type-check.result }}" != "success" ]; then
+            echo "Quality gate failed!"
+            exit 1
+          fi
+          echo "Quality gate passed!"
