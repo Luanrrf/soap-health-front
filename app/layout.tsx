@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import "./globals.css";
 import Header from "./components/common/Header";
+import { PageProvider } from "./components/context";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Header />
 
           <main className="p-6">
-            {children}
+            <PageProvider>
+              {children}
+            </PageProvider>
           </main>
         </div>
       </body>

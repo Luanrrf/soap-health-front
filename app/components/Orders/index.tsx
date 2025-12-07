@@ -4,7 +4,7 @@ import { usePageContext } from "../context";
 import { fetchData } from "../utils/fetchData";
 import { useEffect, useState, useCallback } from "react";
 
-interface Order {
+export interface Order {
   id: number;
   customerName: string;
   sizeId: string;
