@@ -1,7 +1,7 @@
-import { Dispatch, FormEvent, SetStateAction } from "react";
-import { ingredientData, PizzaContextProps } from "./types";
-import { fetchData } from "../utils/fetchData";
-import { PageContextProps } from "../context/types";
+import { Dispatch, FormEvent, SetStateAction } from 'react';
+import { ingredientData, PizzaContextProps } from './types';
+import { fetchData } from '../utils/fetchData';
+import { PageContextProps } from '../context/types';
 
 export const placeOrder = async (
   event: FormEvent<HTMLFormElement>,
@@ -25,19 +25,19 @@ export const placeOrder = async (
   };
 
   const createOrder = await fetchData(`/pizzas?customerName=${name}`, {
-    method: "POST",
+    method: 'POST',
     body,
   });
 
   setPizzaContext((prev) => ({
     ...prev,
     size: {
-      id: "",
-      name: "",
-      basePrice: 0
+      id: '',
+      name: '',
+      basePrice: 0,
     },
     ingredients: [],
-  }))
+  }));
 
   setPageContext((prev) => ({
     ...prev,
@@ -49,5 +49,4 @@ export const placeOrder = async (
   }));
 
   console.log('createOrder', createOrder);
-  
 };
